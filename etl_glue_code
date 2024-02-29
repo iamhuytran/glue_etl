@@ -1,0 +1,61 @@
+This is the code for the Glue ETL job that was used to replicate tables between S3 buckets:
+
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args["JOB_NAME"], args)
+
+# Script generated for node AWS Glue Data Catalog
+AWSGlueDataCatalog_node1709107214924 = glueContext.create_dynamic_frame.from_catalog(
+    database="annual_reports_practice",
+    table_name="annual_reports",
+    transformation_ctx="AWSGlueDataCatalog_node1709107214924",
+)
+
+# Script generated for node Change Schema
+ChangeSchema_node1709107250066 = ApplyMapping.apply(
+    frame=AWSGlueDataCatalog_node1709107214924,
+    mappings=[
+        ("year", "long", "year", "long"),
+        (
+            "industry_aggregation_nzsioc",
+            "string",
+            "industry_aggregation_nzsioc",
+            "string",
+        ),
+        ("industry_code_nzsioc", "string", "industry_code_nzsioc", "string"),
+        ("industry_name_nzsioc", "string", "industry_name_nzsioc", "string"),
+        ("units", "string", "units", "string"),
+        ("variable_code", "string", "variable_code", "string"),
+        ("variable_name", "string", "variable_name", "string"),
+        ("variable_category", "string", "variable_category", "string"),
+        ("value", "string", "value", "string"),
+        ("industry_code_anzsic06", "string", "industry_code_anzsic06", "string"),
+        ("partition_0", "string", "partition_0", "string"),
+    ],
+    transformation_ctx="ChangeSchema_node1709107250066",
+)
+
+# Script generated for node Amazon S3
+AmazonS3_node1709107342754 = glueContext.write_dynamic_frame.from_options(
+    frame=ChangeSchema_node1709107250066,
+    connection_type="s3",
+    format="glueparquet",
+    connection_options={
+        "path": "s3://aws-glue-demo-tutorial123/target-data-store/parquet-reports/",
+        "partitionKeys": [],
+    },
+    format_options={"compression": "snappy"},
+    transformation_ctx="AmazonS3_node1709107342754",
+)
+
+job.commit()
